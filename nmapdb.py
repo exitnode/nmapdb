@@ -125,6 +125,33 @@ def main(argv, environ):
             print "%s: error: file \"%s\" doesn't seem to be XML\n" % (argv[0], fname)
             continue
 
+        for nmaprun in doc.getElementsByTagName("nmaprun"):
+            try:
+                nmaprun_args = nmaprun.getAttribute("args")
+                nmaprun_start = nmaprun.getAttribute("start")
+		scan_id = nmaprun_start
+                nmaprun_startstr = nmaprun.getAttribute("startstr")
+
+                scaninfo = nmaprun.getElementsByTagName("scaninfo")[0]
+                scaninfo_type = scaninfo.getAttribute("type")
+                scaninfo_protocol = scaninfo.getAttribute("protocol")
+                scaninfo_numservices = scaninfo.getAttribute("numservices")
+                scaninfo_services = scaninfo.getAttribute("services")
+
+            except:
+                continue
+
+        for runstats in doc.getElementsByTagName("runstats"):
+            try:
+		finished = runstats.getElementsByTagName("finished")[0]
+                finished_time = finished.getAttribute("time")
+                finished_timestr = finished.getAttribute("timestr")
+                finished_elapsed = finished.getAttribute("elapsed")
+                finished_summary = finished.getAttribute("summary")
+
+            except:
+                continue
+
         for host in doc.getElementsByTagName("host"):
             try:
                 address = host.getElementsByTagName("address")[0]
@@ -200,13 +227,25 @@ def main(argv, environ):
             myprint("[hosts] state:\t\t%s" % (state))
             myprint("[hosts] mac_vendor:\t%s" % (mac_vendor))
             myprint("[hosts] whois:\n")
+            myprint("[hosts] XML_name:\n")
             myprint("%s\n" % (whois_str))
 
             if nodb_flag == false:
                 try:
-                    cursor.execute("INSERT INTO hosts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    cursor.execute("INSERT INTO scaninfo VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            (scan_id, nmaprun_args, scaninfo_type, scaninfo_protocol, scaninfo_numservices,
+			    nmaprun_start, nmaprun_startstr, finished_time, finished_timestr, finished_elapsed, finished_summary))
+                except sqlite.IntegrityError, msg:
+                    print "%s: warning: %s: table scaninfo\n" % (argv[0], msg)
+                    continue
+                except:
+                    print "%s: unknown exception during insert into table scaninfo\n" % (argv[0])
+                    continue
+
+                try:
+                    cursor.execute("INSERT INTO hosts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                             (ip, mac, hostname, protocol, os_name, os_family, os_accuracy,
-                            os_gen, timestamp, state, mac_vendor, whois_str))
+                            os_gen, timestamp, state, mac_vendor, whois_str, scan_id))
                 except sqlite.IntegrityError, msg:
                     print "%s: warning: %s: table hosts: ip: %s\n" % (argv[0], msg, ip)
                     continue
@@ -264,6 +303,7 @@ def main(argv, environ):
                 myprint("\t[ports] name:\t\t%s" % (port_name))
                 myprint("\t[ports] state:\t\t%s" % (state))
                 myprint("\t[ports] service:\t%s" % (service_str))
+		myprint("\t[ports] last_update:\t%s" % (timestamp))
                 
                 if info_str != "":
                     myprint("\t[ports] info:\n")
@@ -271,7 +311,7 @@ def main(argv, environ):
 
                 if nodb_flag == false:
                     try:
-                        cursor.execute("INSERT INTO ports VALUES (?, ?, ?, ?, ?, ?, ?)", (ip, pn, protocol, port_name, state, service_str, info_str))
+                        cursor.execute("INSERT INTO ports VALUES (?, ?, ?, ?, ?, ?, ?,?)", (ip, pn, protocol, port_name, state, service_str, info_str,scan_id))
                     except sqlite.IntegrityError, msg:
                         print "%s: warning: %s: table ports: ip: %s\n" % (argv[0], msg, ip)
                         continue

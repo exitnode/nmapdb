@@ -4,7 +4,7 @@
  */
 
 CREATE TABLE IF NOT EXISTS hosts (
-    ip          VARCHAR(16) PRIMARY KEY NOT NULL,
+    ip          VARCHAR(16) NOT NULL,
     mac         VARCHAR(18),
     hostname    VARCHAR(129),
     protocol    VARCHAR(5) DEFAULT 'ipv4',
@@ -15,7 +15,9 @@ CREATE TABLE IF NOT EXISTS hosts (
     last_update TIMESTAMP,
     state       VARCHAR(8) DEFAULT 'down',
     mac_vendor  TEXT,
-    whois       TEXT
+    whois       TEXT,
+    scan_id     TIMESTAMP,
+    PRIMARY KEY (ip, scan_id)
 );
 
 CREATE TABLE IF NOT EXISTS ports (
@@ -26,8 +28,24 @@ CREATE TABLE IF NOT EXISTS ports (
     state       VARCHAR(33) DEFAULT 'closed',
     service     TEXT,
     info        TEXT,
-    PRIMARY KEY (ip, port, protocol),
+    scan_id     TIMESTAMP,
+    PRIMARY KEY (ip, port, protocol, scan_id),
     CONSTRAINT fk_ports_hosts FOREIGN KEY (ip) REFERENCES hosts(ip) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS scaninfo (
+    scan_id     TIMESTAMP NOT NULL,
+    nmap_args   TEXT,
+    type 	VARCHAR(4),
+    protocol    VARCHAR(4),
+    numservices INTEGER,
+    start	TIMESTAMP,
+    startstr	VARCHAR(33),
+    end		TIMESTAMP,
+    endstr	VARCHAR(33),
+    elapsed	INTEGER,
+    summary     TEXT,
+    PRIMARY KEY (scan_id)
 );
 
 CREATE TRIGGER IF NOT EXISTS fki_ports_hosts_ip
