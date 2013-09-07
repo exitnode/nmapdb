@@ -152,6 +152,19 @@ def main(argv, environ):
             except:
                 continue
 
+    	if nodb_flag == false:
+	    try:
+	        cursor.execute("INSERT INTO scaninfo VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		    (scan_id, nmaprun_args, scaninfo_type, scaninfo_protocol, scaninfo_numservices,
+		    nmaprun_start, nmaprun_startstr, finished_time, finished_timestr, finished_elapsed, finished_summary))
+	    except sqlite.IntegrityError, msg:
+	        print "%s: warning: %s: table scaninfo\n" % (argv[0], msg)
+	        continue
+	    except:
+	        print "%s: unknown exception during insert into table scaninfo\n" % (argv[0])
+	        continue
+
+
         for host in doc.getElementsByTagName("host"):
             try:
                 address = host.getElementsByTagName("address")[0]
@@ -231,16 +244,6 @@ def main(argv, environ):
             myprint("%s\n" % (whois_str))
 
             if nodb_flag == false:
-                try:
-                    cursor.execute("INSERT INTO scaninfo VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                            (scan_id, nmaprun_args, scaninfo_type, scaninfo_protocol, scaninfo_numservices,
-			    nmaprun_start, nmaprun_startstr, finished_time, finished_timestr, finished_elapsed, finished_summary))
-                except sqlite.IntegrityError, msg:
-                    print "%s: warning: %s: table scaninfo\n" % (argv[0], msg)
-                    continue
-                except:
-                    print "%s: unknown exception during insert into table scaninfo\n" % (argv[0])
-                    continue
 
                 try:
                     cursor.execute("INSERT INTO hosts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
