@@ -2,6 +2,7 @@
 #
 # nmapdb - Parse nmap's XML output files and insert them into an SQLite database
 # Copyright (c) 2012 Patroklos Argyroudis <argp at domain census-labs.com>
+# Modified and extended 2013 by Michael Clemens <clemens at domain fsfe.org>
 
 import sys
 import os
@@ -74,6 +75,7 @@ def main(argv, environ):
             nodb_flag = true
         if field in ("-V", "--version"):
             print "nmapdb v%s by Patroklos Argyroudis <argp at domain census-labs.com>" % (VERSION)
+            print "Modified and extended by Michael Clemens <clemens at domain fsfe.org>"
             print "parse nmap's XML output files and insert them into an SQLite database"
             sys.exit(0)
 
@@ -240,7 +242,6 @@ def main(argv, environ):
             myprint("[hosts] state:\t\t%s" % (state))
             myprint("[hosts] mac_vendor:\t%s" % (mac_vendor))
             myprint("[hosts] whois:\n")
-            myprint("[hosts] XML_name:\n")
             myprint("%s\n" % (whois_str))
 
             if nodb_flag == false:

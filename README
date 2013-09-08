@@ -61,3 +61,6 @@ Thanks to antonat and thomas for providing feedback.
 
 argp, Mon Apr 30 14:49:21 EEST 2012
 
+Modifications by Michael Clemens:
+* It is now possible to add multiple scans of the same hosts
+* Detailed information about scans are stored in table "scandata" and linked with scanned hosts and ports
