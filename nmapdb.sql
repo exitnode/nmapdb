@@ -72,4 +72,27 @@ FOR EACH ROW BEGIN
     DELETE from ports WHERE ip = OLD.ip;
 END;
 
+CREATE VIEW "main"."vAllHostsAndOpenPorts" 
+AS  select distinct 
+	hosts.ip,
+	hosts.hostname,
+	ports.port,
+	ports.protocol,
+	ports.name 
+from hosts inner join ports on hosts.ip=ports.ip 
+where ports.state='open' order by hosts.ip;
+
+CREATE VIEW "main"."vAllHostsAndOpenPortsWithNmapArgs" 
+AS select
+	hosts.ip,
+	hosts.hostname,
+	ports.port,
+	ports.protocol, 
+	ports.name, 
+	(SELECT nmap_args 
+		from scaninfo 
+		where scaninfo.scan_id=hosts.scan_id) 
+from hosts inner join ports on hosts.ip=ports.ip 
+where ports.state='open' order by hosts.ip;
+
 /* EOF */
