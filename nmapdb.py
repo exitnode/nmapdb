@@ -150,14 +150,18 @@ def main(argv, environ):
                 finished_timestr = finished.getAttribute("timestr")
                 finished_elapsed = finished.getAttribute("elapsed")
                 finished_summary = finished.getAttribute("summary")
+		rs_hosts = runstats.getElementsByTagName("hosts")[0]
+                hosts_up = rs_hosts.getAttribute("up")
+                hosts_down = rs_hosts.getAttribute("down")
+                hosts_total = rs_hosts.getAttribute("total")
 
             except:
                 continue
 
     	if nodb_flag == false:
 	    try:
-	        cursor.execute("INSERT INTO scaninfo VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		    (scan_id, nmaprun_args, scaninfo_type, scaninfo_protocol, scaninfo_numservices,
+	        cursor.execute("INSERT INTO scaninfo VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		    (scan_id, nmaprun_args, scaninfo_type, scaninfo_protocol, scaninfo_numservices, hosts_up, hosts_down, hosts_total,
 		    nmaprun_start, nmaprun_startstr, finished_time, finished_timestr, finished_elapsed, finished_summary))
 	    except sqlite.IntegrityError, msg:
 	        print "%s: warning: %s: table scaninfo\n" % (argv[0], msg)

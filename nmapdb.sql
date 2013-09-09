@@ -39,6 +39,9 @@ CREATE TABLE IF NOT EXISTS scaninfo (
     type 	VARCHAR(4),
     protocol    VARCHAR(4),
     numservices INTEGER,
+    hosts_up    INTEGER,
+    hosts_down  INTEGER,
+    hosts_total INTEGER,
     start	TIMESTAMP,
     startstr	VARCHAR(33),
     end		TIMESTAMP,
@@ -74,25 +77,34 @@ END;
 
 CREATE VIEW "main"."vAllHostsAndOpenPorts" 
 AS  select distinct 
-	hosts.ip,
-	hosts.hostname,
-	ports.port,
-	ports.protocol,
-	ports.name 
+	hosts.ip as "IP Address",
+	hosts.hostname as "Hostname",
+	ports.port as "Port",
+	ports.protocol as "Protocol", 
+	ports.name as "Service"
 from hosts inner join ports on hosts.ip=ports.ip 
 where ports.state='open' order by hosts.ip;
 
 CREATE VIEW "main"."vAllHostsAndOpenPortsWithNmapArgs" 
 AS select
-	hosts.ip,
-	hosts.hostname,
-	ports.port,
-	ports.protocol, 
-	ports.name, 
+	hosts.ip as "IP Address",
+	hosts.hostname as "Hostname",
+	ports.port as "Port",
+	ports.protocol as "Protocol", 
+	ports.name as "Service", 
 	(SELECT nmap_args 
 		from scaninfo 
-		where scaninfo.scan_id=hosts.scan_id) 
+		where scaninfo.scan_id=hosts.scan_id) as "Nmap Arguments"
 from hosts inner join ports on hosts.ip=ports.ip 
 where ports.state='open' order by hosts.ip;
+
+CREATE VIEW "main"."vNmapRuntimeStatistics" 
+AS select
+	nmap_args as "Nmap Arguments", 
+	protocol  as "Protocol", 
+	numservices as "Ports", 
+	hosts_total as "Hosts", 
+	round(elapsed/60,0) as "Time (min)" 
+from scaninfo;
 
 /* EOF */
