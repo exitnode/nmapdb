@@ -287,6 +287,7 @@ def main(argv, environ):
 		    if num_open_ports >= filter_strange_hosts:
 			strange_host = true
 		        print "%s: host %s has %s open ports and is considered as a strange host\n" % (argv[0], ip, num_open_ports)
+		        print "All open ports have been replaced by the one open port 99999"
                 except:
                     print "Error while getting number of ports"
                     continue
