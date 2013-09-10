@@ -1,3 +1,15 @@
+This is a modified and extended version of Patroklos Argyroudis nmapdb (https://github.com/argp/nmapdb).
+
+nmapdb parses nmap's XML output files and inserts them into an SQLite database. This version adds the following features:
+
+- multiple scans of the same hosts can be inserted
+- Scan information are stored
+- Nmap statistics are stored 
+- Scanned ports and hosts are linked to a specific scan
+- Some db views have been added
+
+Usage of nmapdb remains the same, see the original README for instructions:
+
 nmapdb parses nmap's XML output files and inserts them into an SQLite database.
 
 I coded this a while back (mid 2009) and have been using it since.  Some
@@ -60,7 +72,3 @@ Feel free to fork, submit patches, whatever.
 Thanks to antonat and thomas for providing feedback.
 
 argp, Mon Apr 30 14:49:21 EEST 2012
-
-Modifications by Michael Clemens:
-* It is now possible to add multiple scans of the same hosts
-* Detailed information about scans are stored in table "scandata" and linked with scanned hosts and ports
