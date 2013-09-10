@@ -16,6 +16,7 @@ DEFAULT_DATABASE = "./nmapdb.db"
 true = 1
 false = 0
 vflag = false
+filter_strange_hosts = 0
 
 def myprint(msg):
     global vflag
@@ -33,6 +34,7 @@ def usage(name):
     print "     (-d) --database     specify output SQLite DB file"
     print "     (-f) --frequency    list most frequent open ports from specified DB"
     print "     (-n) --nodb         do not perform any DB operations (i.e. dry run)"
+    print "     (-s) --filter       filter out strange hosts that have more than nn open ports"
     print "     (-V) --version      output version number and exit"
 
     return
@@ -50,7 +52,7 @@ def main(argv, environ):
         sys.exit(0)
  
     try:
-        alist, args = getopt.getopt(argv[1:], "hvd:c:f:nV",
+        alist, args = getopt.getopt(argv[1:], "hvd:c:f:s:nV",
                 ["help", "verbose", "database=", "create=", "frequency=",
                  "nodb", "version"])
     except getopt.GetoptError, msg:
@@ -71,6 +73,8 @@ def main(argv, environ):
         if field in ("-f", "--frequency"):
             freq_flag = true
             db_path = val
+        if field in ("-s", "--filter"):
+	    filter_strange_hosts = int(val)
         if field in ("-n", "--nodb"):
             nodb_flag = true
         if field in ("-V", "--version"):
@@ -172,6 +176,9 @@ def main(argv, environ):
 
 
         for host in doc.getElementsByTagName("host"):
+
+	    strange_host = false
+
             try:
                 address = host.getElementsByTagName("address")[0]
                 ip = address.getAttribute("addr")
@@ -268,67 +275,95 @@ def main(argv, environ):
                 print "%s: host %s has no open ports\n" % (argv[0], ip)
                 continue
 
-            for port in ports:
-                pn = port.getAttribute("portid")
-                protocol = port.getAttribute("protocol")
-                state_el = port.getElementsByTagName("state")[0]
-                state = state_el.getAttribute("state")
+            if filter_strange_hosts > 0:
 
                 try:
-                    service = port.getElementsByTagName("service")[0]
-                    port_name = service.getAttribute("name")
-                    product_descr = service.getAttribute("product")
-                    product_ver = service.getAttribute("version")
-                    product_extra = service.getAttribute("extrainfo")
+		    num_open_ports = 0
+	            for port in ports:	
+			state_el = port.getElementsByTagName("state")[0]
+			state = state_el.getAttribute("state")
+			if state == "open":
+			    num_open_ports += 1
+		    if num_open_ports >= filter_strange_hosts:
+			strange_host = true
+		        print "%s: host %s has %s open ports and is considered as a strange host\n" % (argv[0], ip, num_open_ports)
                 except:
-                    service = ""
-                    port_name = ""
-                    product_descr = ""
-                    product_ver = ""
-                    product_extra = ""
-                    
-                service_str = "%s %s %s" % (product_descr, product_ver, product_extra)
+                    print "Error while getting number of ports"
+                    continue
 
-                info_str = ""
+            if strange_host == false:
 
-                for i in (0, 1):
+                for port in ports:
+                    pn = port.getAttribute("portid")
+                    protocol = port.getAttribute("protocol")
+                    state_el = port.getElementsByTagName("state")[0]
+                    state = state_el.getAttribute("state")
+
                     try:
-                        script = port.getElementsByTagName("script")[i]
-                        script_id = script.getAttribute("id")
-                        script_output = script.getAttribute("output")
+                        service = port.getElementsByTagName("service")[0]
+                        port_name = service.getAttribute("name")
+                        product_descr = service.getAttribute("product")
+                        product_ver = service.getAttribute("version")
+                        product_extra = service.getAttribute("extrainfo")
                     except:
-                        script_id = ""
-                        script_output = ""
+                        service = ""
+                        port_name = ""
+                        product_descr = ""
+                        product_ver = ""
+                        product_extra = ""
+                    
+                    service_str = "%s %s %s" % (product_descr, product_ver, product_extra)
 
-                    if script_id != "" and script_output != "":
-                        info_str += "%s: %s\n" % (script_id, script_output)
+                    info_str = ""
 
-                myprint("\t------------------------------------------------")
+                    for i in (0, 1):
+                        try:
+                            script = port.getElementsByTagName("script")[i]
+                            script_id = script.getAttribute("id")
+                            script_output = script.getAttribute("output")
+                        except:
+                            script_id = ""
+                            script_output = ""
 
-                myprint("\t[ports] ip:\t\t%s" % (ip))
-                myprint("\t[ports] port:\t\t%s" % (pn))
-                myprint("\t[ports] protocol:\t%s" % (protocol))
-                myprint("\t[ports] name:\t\t%s" % (port_name))
-                myprint("\t[ports] state:\t\t%s" % (state))
-                myprint("\t[ports] service:\t%s" % (service_str))
-		myprint("\t[ports] last_update:\t%s" % (timestamp))
+                        if script_id != "" and script_output != "":
+                            info_str += "%s: %s\n" % (script_id, script_output)
+
+                    myprint("\t------------------------------------------------")
+
+                    myprint("\t[ports] ip:\t\t%s" % (ip))
+                    myprint("\t[ports] port:\t\t%s" % (pn))
+                    myprint("\t[ports] protocol:\t%s" % (protocol))
+                    myprint("\t[ports] name:\t\t%s" % (port_name))
+                    myprint("\t[ports] state:\t\t%s" % (state))
+                    myprint("\t[ports] service:\t%s" % (service_str))
+		    myprint("\t[ports] last_update:\t%s" % (timestamp))
                 
-                if info_str != "":
-                    myprint("\t[ports] info:\n")
-                    myprint("%s\n" % (info_str))
+                    if info_str != "":
+                        myprint("\t[ports] info:\n")
+                        myprint("%s\n" % (info_str))
 
-                if nodb_flag == false:
+                    if nodb_flag == false:
+                        try:
+                            cursor.execute("INSERT INTO ports VALUES (?, ?, ?, ?, ?, ?, ?,?)", (ip, pn, protocol, port_name, state, service_str, info_str,scan_id))
+                        except sqlite.IntegrityError, msg:
+                            print "%s: warning: %s: table ports: ip: %s\n" % (argv[0], msg, ip)
+                            continue
+                        except:
+                            print "%s: unknown exception during insert into table ports\n" % (argv[0])
+                            continue
+
+                    myprint("\t------------------------------------------------")
+            else:
+
+	        if nodb_flag == false:
                     try:
-                        cursor.execute("INSERT INTO ports VALUES (?, ?, ?, ?, ?, ?, ?,?)", (ip, pn, protocol, port_name, state, service_str, info_str,scan_id))
+                        cursor.execute("INSERT INTO ports VALUES (?, ?, ?, ?, ?, ?, ?,?)", (ip, 99999, "xxx", "xxx", "open", "xxx", "xxx",scan_id))
                     except sqlite.IntegrityError, msg:
                         print "%s: warning: %s: table ports: ip: %s\n" % (argv[0], msg, ip)
                         continue
                     except:
                         print "%s: unknown exception during insert into table ports\n" % (argv[0])
                         continue
-
-                myprint("\t------------------------------------------------")
-
             myprint("================================================================")
 
     if nodb_flag == false:
