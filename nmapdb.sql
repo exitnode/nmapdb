@@ -75,8 +75,7 @@ FOR EACH ROW BEGIN
     DELETE from ports WHERE ip = OLD.ip;
 END;
 
-DROP VIEW "main"."vAllHostsAndOpenPorts";
-CREATE VIEW "main"."vAllHostsAndOpenPorts" 
+CREATE VIEW IF NOT EXISTS "main"."vAllHostsAndOpenPorts" 
 AS  select distinct 
 	hosts.ip as "IP Address",
 	hosts.hostname as "Hostname",
@@ -86,8 +85,7 @@ AS  select distinct
 from hosts inner join ports on hosts.ip=ports.ip 
 where ports.state='open' order by hosts.ip;
 
-DROP VIEW "main"."vAllHostsAndOpenPortsWithNmapArgs";
-CREATE VIEW "main"."vAllHostsAndOpenPortsWithNmapArgs" 
+CREATE VIEW IF NOT EXISTS "main"."vAllHostsAndOpenPortsWithNmapArgs" 
 AS select
 	hosts.ip as "IP Address",
 	hosts.hostname as "Hostname",
@@ -100,8 +98,7 @@ AS select
 from hosts inner join ports on hosts.ip=ports.ip 
 where ports.state='open' order by hosts.ip;
 
-DROP VIEW "main"."vNmapRuntimeStatistics";
-CREATE VIEW "main"."vNmapRuntimeStatistics" 
+CREATE VIEW IF NOT EXISTS "main"."vNmapRuntimeStatistics" 
 AS select
 	nmap_args as "Nmap Arguments", 
 	protocol  as "Protocol", 
